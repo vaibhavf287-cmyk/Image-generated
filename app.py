@@ -6,7 +6,8 @@ import io
 app = Flask(__name__)
 
 API_URL = "https://huggingface.co"
-headers = {"Authorization": "Bearer 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"}
+# यहाँ हम पर्यावरण वेरिएबल (Environment Variable) का उपयोग कर रहे हैं
+headers = {"Authorization": f"Bearer {os.environ.get('HF_API_KEY')}"}
 
 # सुंदर और सिंपल HTML UI डिजाइन
 HTML_UI = """
