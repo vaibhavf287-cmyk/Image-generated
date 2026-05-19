@@ -6,7 +6,7 @@ import io
 app = Flask(__name__)
 
 API_URL = "https://huggingface.co"
-headers = {"Authorization": f"Bearer {os.environ.get('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')}"}
+headers = {"Authorization": f"Bearer {os.environ.get('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')}"}
 
 # सुंदर और सिंपल HTML UI डिजाइन
 HTML_UI = """
