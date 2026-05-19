@@ -5,10 +5,8 @@ import io
 
 app = Flask(__name__)
 
-# हमेशा एक्टिव रहने वाला सबसे स्टेबल मॉडल
+# सबसे भरोसेमंद और हमेशा चालू रहने वाला मॉडल
 API_URL = "https://huggingface.co"
-
-# टोकन को सुरक्षित रूप से Render से उठाना
 HF_TOKEN = os.environ.get('HF_API_KEY')
 headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 
@@ -49,25 +47,22 @@ HTML_UI = """
             
             if (!prompt) { return alert('कृपया कुछ टेक्स्ट लिखें!'); }
             
-            loading.innerText = 'AI फोटो बना रहा है, कृपया 10-15 सेकंड रुकें...';
             loading.style.display = 'block';
             img.style.display = 'none';
             
             try {
+                // इमेज को सीधे यूआरएल से लोड करना ताकि कोई JSON एरर न आए
                 const response = await fetch(`/generate?prompt=${encodeURIComponent(prompt)}`);
-                const data = await response.json().catch(() => null);
                 
-                if (data && data.error) {
-                    alert('Error: ' + data.error);
-                } else if (response.ok) {
+                if (response.ok) {
                     const blob = await response.blob();
                     img.src = URL.createObjectURL(blob);
                     img.style.display = 'block';
                 } else {
-                    alert('इमेज जनरेट नहीं हो सकी। दोबारा कोशिश करें।');
+                    alert('मॉडल अभी लोड हो रहा है, कृपया 10 सेकंड बाद फिर बटन दबाएं।');
                 }
             } catch (error) {
-                alert('सर्वर से संपर्क नहीं हो पाया।');
+                alert('सर्वर व्यस्त है, कृपया दोबारा प्रयास करें।');
             } finally {
                 loading.style.display = 'none';
             }
@@ -88,22 +83,19 @@ def generate():
         return jsonify({"error": "No prompt provided"}), 400
     
     if not HF_TOKEN:
-        return jsonify({"error": "Render पर HF_API_KEY सेट नहीं है। कृपया चेक करें।"}), 500
+        return jsonify({"error": "No Token"}), 500
 
     try:
-        response = requests.post(API_URL, headers=headers, json={"inputs": prompt}, timeout=30)
+        response = requests.post(API_URL, headers=headers, json={"inputs": prompt}, timeout=40)
         
         if response.status_code == 200:
             return send_file(io.BytesIO(response.content), mimetype='image/jpeg')
         else:
-            # Hugging Face से आने वाले सटीक एरर मैसेज को पढ़ना
-            error_details = response.json()
-            error_msg = error_details.get('error', 'Unknown Hugging Face Error')
-            return jsonify({"error": f"Hugging Face: {error_msg}"}), response.status_code
+            return "Error from Hugging Face", response.status_code
             
     except Exception as e:
-        return jsonify({"error": f"Server Error: {str(e)}"}), 500
+        return "Server Error", 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=10000)
-        
+    
